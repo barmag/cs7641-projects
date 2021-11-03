@@ -139,3 +139,7 @@ cython_debug/
 
 ~$*.docx
 project1/*.tmp
+
+#docs
+*.docx
+*.pdf
