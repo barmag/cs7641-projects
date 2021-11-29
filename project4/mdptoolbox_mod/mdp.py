@@ -1116,6 +1116,7 @@ class QLearning(MDP):
 
         # Initialisations
         self.Q = _np.zeros((self.S, self.A))
+        self.F = _np.zeros((self.S))
 
         self.run_stats = []
         self.error_mean = []
@@ -1125,7 +1126,7 @@ class QLearning(MDP):
         self.S_freq = _np.zeros((self.S, self.A))
         self.run_stat_frequency = max(1, self.max_iter // 10000) if run_stat_frequency is None else run_stat_frequency
 
-    def run(self, env, tmax, v4):
+    def run(self, env, tmax, v5):
 
         # Run the Q-learning algorithm.
         error_cumulative = []
@@ -1197,6 +1198,7 @@ class QLearning(MDP):
                     except IndexError:
                         r = self.R[s]
 
+                self.F[s] += 1
                 # Q[s, a] = Q[s, a] + alpha*(R + gamma*Max[Q(s’, A)] - Q[s, a])
                 # Updating the value of Q
                 dQ = self.alpha * (r + self.gamma * self.Q[s_new, :].max() - self.Q[s, a])
@@ -1206,6 +1208,7 @@ class QLearning(MDP):
                 # Computing means all over maximal Q variations values
                 error = _np.absolute(dQ)
                 if done:
+                    self.F[s_new] += 1
                     if r == 1 and start_s == 0:
                         g_success += 1
                         # print("************end state from " + str(start_s) + " at episode " + str(n))
@@ -1220,7 +1223,7 @@ class QLearning(MDP):
             self.policy = p
 
             self.S_freq[s,a] += 1
-            run_stats.append(self._build_run_stat(i=n, s=s, a=a, r=r, p=p, v=v, error=error))
+            run_stats.append(self._build_run_stat(i=n, s=s, a=a, r=r, p=p, v=v, error=error, frequency=self.F))
 
             if take_run_stat:
                 error_cumulative.append(error)
@@ -1271,7 +1274,7 @@ class QLearning(MDP):
             self.run_stats = run_stats
         return self.run_stats
 
-    def _build_run_stat(self, i, a, error, p, r, s, v):
+    def _build_run_stat(self, i, a, error, p, r, s, v, frequency=None):
         run_stat = {
             'State': s,
             'Action': a,
@@ -1285,6 +1288,7 @@ class QLearning(MDP):
             'Max V': _np.max(v),
             'Mean V': _np.mean(v),
             'Iteration': i,
+            'frequency': frequency
             # 'Value': v.copy(),
             # 'Policy': p.copy()
         }
